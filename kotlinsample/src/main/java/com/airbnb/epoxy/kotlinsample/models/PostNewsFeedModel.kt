@@ -20,7 +20,7 @@ abstract class PostNewsFeedModel : EpoxyModelWithHolder<PostNewsFeedViewHolder>(
     lateinit var listener: () -> Unit
 
     override fun bind(holder: PostNewsFeedViewHolder) {
-        holder.parent.tag = holder
+        holder.parent.tag = holder //TODO: We need this for video to autoplay
         holder.bindUri(
             0,
             Uri.parse("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")
