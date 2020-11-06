@@ -34,6 +34,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.epoxy.ActivityRecyclerPool
 import com.airbnb.epoxy.AutoModel
+import com.airbnb.epoxy.Carousel
 import com.airbnb.epoxy.EpoxyAdapter
 import com.airbnb.epoxy.EpoxyController
 import com.airbnb.epoxy.EpoxyItemSpacingDecorator
@@ -102,9 +103,6 @@ open class EthanRecyclerView @JvmOverloads constructor(
         val holder = child.tag
 
         if (holder !is EpoxyPlayerHolder) return
-
-        val playerView = holder.playerView
-            ?: throw NullPointerException("Expected non-null playerView, found null for: $holder")
 
         playbackInfoCache.onPlayerAttached(holder)
         if (playerManager.manages(holder)) {
@@ -201,24 +199,57 @@ open class EthanRecyclerView @JvmOverloads constructor(
 
         for (i in 0 until childCount) {
             val child = layout!!.getChildAt(i)
-            val holder = child?.tag
-            if (holder is EpoxyPlayerHolder) {
-                // Check candidate's condition
-                if (Common.allowsToPlay(holder)) {
-                    Log.d("TAG", "allowsToPlay")
-                    if (!playerManager.manages(holder)) {
-                        playerManager.attachPlayer(holder)
-                    }
-                    // Don't check the attach result, because the player may be managed already.
-                    if (!holder.isPlaying) {  // not playing or not ready to play.
-                        playerManager.initialize(holder, this@EthanRecyclerView)
-                        Log.d("TAG", "initialize")
-                    }else{
-                        Log.d("TAG", "isPlaying")
-                    }
+            if (child is EpoxyRecyclerView) {
+                val childLayout = child.layoutManager
+                val childChildCount = childLayout?.childCount ?: 0
+
+                if (childChildCount <= 0 || state != RecyclerView.SCROLL_STATE_IDLE) {
+                    playerManager.deferPlaybacks()
+                    return
                 }
 
-                Log.d("TAG", "EpoxyPlayerHolder")
+                for (j in 0 until childChildCount) {
+                    val childChild = childLayout!!.getChildAt(j)
+                    val holder = childChild?.tag
+                    if (holder is EpoxyPlayerHolder) {
+                        // Check candidate's condition
+                        if (Common.allowsToPlay(holder)) {
+                            Log.d("TAG", "allowsToPlay")
+                            if (!playerManager.manages(holder)) {
+                                playerManager.attachPlayer(holder)
+                            }
+                            // Don't check the attach result, because the player may be managed already.
+                            if (!holder.isPlaying) {  // not playing or not ready to play.
+                                playerManager.initialize(holder, this@EthanRecyclerView)
+                                Log.d("TAG", "initialize")
+                            }else{
+                                Log.d("TAG", "isPlaying")
+                            }
+                        }
+
+                        Log.d("TAG", "EpoxyPlayerHolder")
+                    }
+                }
+            } else {
+                val holder = child?.tag
+                if (holder is EpoxyPlayerHolder) {
+                    // Check candidate's condition
+                    if (Common.allowsToPlay(holder)) {
+                        Log.d("TAG", "allowsToPlay")
+                        if (!playerManager.manages(holder)) {
+                            playerManager.attachPlayer(holder)
+                        }
+                        // Don't check the attach result, because the player may be managed already.
+                        if (!holder.isPlaying) {  // not playing or not ready to play.
+                            playerManager.initialize(holder, this@EthanRecyclerView)
+                            Log.d("TAG", "initialize")
+                        }else{
+                            Log.d("TAG", "isPlaying")
+                        }
+                    }
+
+                    Log.d("TAG", "EpoxyPlayerHolder")
+                }
             }
         }
 
