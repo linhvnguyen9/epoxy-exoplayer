@@ -69,7 +69,7 @@ final class PlayerManager implements Handler.Callback {
     return new ArrayList<>(this.players);
   }
 
-  void initialize(@NonNull ToroPlayer player, EthanRecyclerView container) {
+  void initialize(@NonNull ToroPlayer player, ToroEpoxyCarousel container) {
     player.initialize(container, container.getPlaybackInfo(player.getPlayerOrder()));
   }
 

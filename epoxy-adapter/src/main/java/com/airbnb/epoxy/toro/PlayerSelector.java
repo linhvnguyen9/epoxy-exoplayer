@@ -17,7 +17,8 @@
 package com.airbnb.epoxy.toro;
 
 import com.airbnb.epoxy.annotations.Sorted;
-import com.airbnb.epoxy.widget.EthanRecyclerView;
+import com.airbnb.epoxy.widget.ToroEpoxyCarousel;
+import com.airbnb.epoxy.widget.ToroEpoxyCarousel;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -63,14 +64,14 @@ public interface PlayerSelector {
    * Select a collection of {@link ToroPlayer}s to start a playback (if there is non-playing) item.
    * Playing item are also selected.
    *
-   * @param container current {@link EthanRecyclerView} that holds the players.
+   * @param container current {@link ToroEpoxyCarousel} that holds the players.
    * @param items a mutable collection of candidate {@link ToroPlayer}s, which are the players
    * those can start a playback. Items are sorted in order obtained from
    * {@link ToroPlayer#getPlayerOrder()}.
    * @return the collection of {@link ToroPlayer}s to start a playback. An on-going playback can be
    * selected, but it will keep playing.
    */
-  @NonNull Collection<ToroPlayer> select(@NonNull EthanRecyclerView container,
+  @NonNull Collection<ToroPlayer> select(@NonNull ToroEpoxyCarousel container,
       @Sorted(order = ASCENDING) @NonNull List<ToroPlayer> items);
 
   /**
@@ -85,7 +86,7 @@ public interface PlayerSelector {
   @NonNull PlayerSelector reverse();
 
   PlayerSelector DEFAULT = new PlayerSelector() {
-    @NonNull @Override public Collection<ToroPlayer> select(@NonNull EthanRecyclerView container, //
+    @NonNull @Override public Collection<ToroPlayer> select(@NonNull ToroEpoxyCarousel container, //
         @Sorted(order = ASCENDING) @NonNull List<ToroPlayer> items) {
       int count = items.size();
       return count > 0 ? singletonList(items.get(0)) : Collections.<ToroPlayer>emptyList();
@@ -97,7 +98,7 @@ public interface PlayerSelector {
   };
 
   PlayerSelector DEFAULT_REVERSE = new PlayerSelector() {
-    @NonNull @Override public Collection<ToroPlayer> select(@NonNull EthanRecyclerView container, //
+    @NonNull @Override public Collection<ToroPlayer> select(@NonNull ToroEpoxyCarousel container, //
         @Sorted(order = ASCENDING) @NonNull List<ToroPlayer> items) {
       int count = items.size();
       return count > 0 ? singletonList(items.get(count - 1)) : Collections.<ToroPlayer>emptyList();
@@ -116,7 +117,7 @@ public interface PlayerSelector {
       }
     });
 
-    @NonNull @Override public Collection<ToroPlayer> select(@NonNull final EthanRecyclerView container,
+    @NonNull @Override public Collection<ToroPlayer> select(@NonNull final ToroEpoxyCarousel container,
         @Sorted(order = ASCENDING) @NonNull List<ToroPlayer> items) {
       areas.clear();
       int count = items.size();
@@ -139,7 +140,7 @@ public interface PlayerSelector {
   };
 
   @SuppressWarnings("unused") PlayerSelector NONE = new PlayerSelector() {
-    @NonNull @Override public Collection<ToroPlayer> select(@NonNull EthanRecyclerView container, //
+    @NonNull @Override public Collection<ToroPlayer> select(@NonNull ToroEpoxyCarousel container, //
         @Sorted(order = ASCENDING) @NonNull List<ToroPlayer> items) {
       return emptyList();
     }

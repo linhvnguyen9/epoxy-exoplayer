@@ -73,7 +73,7 @@ open class EpoxyRecyclerView @JvmOverloads constructor(
      *
      * @see .setRemoveAdapterWhenDetachedFromWindow
      */
-    private var removedAdapter: RecyclerView.Adapter<*>? = null
+    protected var removedAdapter: RecyclerView.Adapter<*>? = null
 
     private var removeAdapterWhenDetachedFromWindow = true
 
@@ -94,7 +94,7 @@ open class EpoxyRecyclerView @JvmOverloads constructor(
         }
     }
 
-    private val preloadScrollListeners: MutableList<EpoxyPreloader<*>> = mutableListOf()
+    protected val preloadScrollListeners: MutableList<EpoxyPreloader<*>> = mutableListOf()
 
     private val preloadConfigs: MutableList<PreloadConfig<*, *, *>> = mutableListOf()
 
@@ -185,7 +185,7 @@ open class EpoxyRecyclerView @JvmOverloads constructor(
      * views and leak them. More details at https://github.com/airbnb/epoxy/wiki/Avoiding-Memory-Leaks#parent-view
      *
      * The default is true, but you can disable this if you don't want your adapter detached
-     * automatically.
+     * automatically
      *
      * If the adapter is removed via this setting, it will be re-set on the RecyclerView if the
      * RecyclerView is re-attached to the window at a later point.
@@ -599,7 +599,7 @@ open class EpoxyRecyclerView @JvmOverloads constructor(
         clearPoolIfActivityIsDestroyed()
     }
 
-    private fun removeAdapter() {
+    protected fun removeAdapter() {
         val currentAdapter = adapter
         if (currentAdapter != null) {
             // Clear the adapter so the adapter releases its reference to this RecyclerView.
@@ -615,7 +615,7 @@ open class EpoxyRecyclerView @JvmOverloads constructor(
         clearPoolIfActivityIsDestroyed()
     }
 
-    private fun clearRemovedAdapterAndCancelRunnable() {
+    protected fun clearRemovedAdapterAndCancelRunnable() {
         removedAdapter = null
         if (isRemoveAdapterRunnablePosted) {
             removeCallbacks(removeAdapterRunnable)
@@ -623,7 +623,7 @@ open class EpoxyRecyclerView @JvmOverloads constructor(
         }
     }
 
-    private fun clearPoolIfActivityIsDestroyed() {
+    protected fun clearPoolIfActivityIsDestroyed() {
         // Views in the pool hold context references which can keep the activity from being GC'd,
         // plus they can hold significant memory resources. We should clear it asap after the pool
         // is no longer needed - the main signal we use for this is that the activity is destroyed.

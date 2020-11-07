@@ -43,14 +43,14 @@ import static com.airbnb.epoxy.widget.Common.ORDER_COMPARATOR_INT;
  * [1] Manage the {@link PlaybackInfo} of current {@link ToroPlayer}s. Should match 1-1 with the
  * {@link ToroPlayer}s that {@link PlayerManager} is managing.
  *
- * [2] If a non-null {@link CacheManager} provided to the {@link EthanRecyclerView}, this class must
+ * [2] If a non-null {@link CacheManager} provided to the {@link ToroEpoxyCarousel}, this class must
  * properly manage the {@link PlaybackInfo} of detached {@link ToroPlayer} and restore it to
  * previous state after being re-attached.
  */
 @SuppressWarnings({ "WeakerAccess", "unused" }) @SuppressLint("UseSparseArrays")
 final class PlaybackInfoCache extends RecyclerView.AdapterDataObserver {
 
-  @NonNull private final EthanRecyclerView container;
+  @NonNull private final ToroEpoxyCarousel container;
   // Cold cache represents the map between key obtained from CacheManager and PlaybackInfo. If the
   // CacheManager is null, this cache will hold nothing.
   /* pkg */ HashMap<Object, PlaybackInfo> coldCache = new HashMap<>();
@@ -63,7 +63,7 @@ final class PlaybackInfoCache extends RecyclerView.AdapterDataObserver {
   // Holds the map between Player's order and its key obtain from CacheManager.
   /* pkg */ TreeMap<Integer, Object> coldKeyToOrderMap = new TreeMap<>(ORDER_COMPARATOR_INT);
 
-  PlaybackInfoCache(@NonNull EthanRecyclerView container) {
+  PlaybackInfoCache(@NonNull ToroEpoxyCarousel container) {
     this.container = container;
   }
 

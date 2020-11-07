@@ -26,7 +26,7 @@ import com.airbnb.epoxy.media.VolumeInfo;
 import com.airbnb.epoxy.toro.ToroPlayer;
 import com.airbnb.epoxy.toro.ToroPlayer.EventListener;
 import com.airbnb.epoxy.toro.ToroPlayer.State;
-import com.airbnb.epoxy.widget.EthanRecyclerView;
+import com.airbnb.epoxy.widget.ToroEpoxyCarousel;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.FloatRange;
@@ -91,7 +91,7 @@ public abstract class ToroPlayerHelper {
   @NonNull protected final ToroPlayer player;
 
   // This instance should be setup from #initialize and cleared from #release
-  protected EthanRecyclerView container;
+  protected ToroEpoxyCarousel container;
 
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) //
   private ToroPlayer.EventListeners eventListeners;
@@ -157,7 +157,7 @@ public abstract class ToroPlayerHelper {
    */
   protected abstract void initialize(@NonNull PlaybackInfo playbackInfo);
 
-  public final void initialize(@NonNull EthanRecyclerView container, @NonNull PlaybackInfo playbackInfo) {
+  public final void initialize(@NonNull ToroEpoxyCarousel container, @NonNull PlaybackInfo playbackInfo) {
     this.container = container;
     this.initialize(playbackInfo);
   }
