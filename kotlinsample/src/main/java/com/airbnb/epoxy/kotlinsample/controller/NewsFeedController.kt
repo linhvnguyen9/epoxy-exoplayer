@@ -1,21 +1,15 @@
 package com.airbnb.epoxy.kotlinsample.controller
 
 import android.graphics.Color
-import android.util.Log
-import android.widget.Toast
 import com.airbnb.epoxy.TypedEpoxyController
-import com.airbnb.epoxy.kotlinsample.MainActivity
 import com.airbnb.epoxy.kotlinsample.dataBindingItem
 import com.airbnb.epoxy.kotlinsample.models.CarouselItemCustomViewModel_
 import com.airbnb.epoxy.kotlinsample.models.ItemDataClass
-import com.airbnb.epoxy.kotlinsample.models.PostNewsFeedModel_
 import com.airbnb.epoxy.kotlinsample.models.itemCustomView
 import com.airbnb.epoxy.kotlinsample.models.itemEpoxyHolder
 import com.airbnb.epoxy.kotlinsample.models.postNewsFeed
 import com.airbnb.epoxy.kotlinsample.views.carouselNoSnap
 import com.airbnb.epoxy.toro.CacheManager
-import com.airbnb.epoxy.widget.EthanRecyclerView
-import com.airbnb.epoxy.widget.PressablePlayerSelector
 
 class NewsFeedController : TypedEpoxyController<List<Any>>(), CacheManager {
 

@@ -22,7 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 
-import com.airbnb.epoxy.widget.EthanRecyclerView;
+import com.airbnb.epoxy.widget.ToroEpoxyCarousel;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.NonNull;
@@ -101,14 +101,14 @@ public final class ToroUtil {
   }
 
   @SuppressWarnings("unchecked")  //
-  public static void wrapParamBehavior(@NonNull final EthanRecyclerView container,
-      final EthanRecyclerView.BehaviorCallback callback) {
+  public static void wrapParamBehavior(@NonNull final ToroEpoxyCarousel container,
+      final ToroEpoxyCarousel.BehaviorCallback callback) {
     container.setBehaviorCallback(callback);
     ViewGroup.LayoutParams params = container.getLayoutParams();
     if (params instanceof CoordinatorLayout.LayoutParams) {
       CoordinatorLayout.Behavior temp = ((CoordinatorLayout.LayoutParams) params).getBehavior();
       if (temp != null) {
-        ((CoordinatorLayout.LayoutParams) params).setBehavior(new EthanRecyclerView.Behavior(temp));
+        ((CoordinatorLayout.LayoutParams) params).setBehavior(new ToroEpoxyCarousel.Behavior(temp));
       }
     }
   }

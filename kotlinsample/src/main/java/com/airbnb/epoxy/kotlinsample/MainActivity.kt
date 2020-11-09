@@ -1,25 +1,14 @@
 package com.airbnb.epoxy.kotlinsample
 
-import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.airbnb.epoxy.EpoxyRecyclerView
 import com.airbnb.epoxy.EpoxyVisibilityTracker
 import com.airbnb.epoxy.kotlinsample.controller.NewsFeedController
-import com.airbnb.epoxy.kotlinsample.models.CarouselItemCustomViewModel_
-import com.airbnb.epoxy.kotlinsample.models.ItemDataClass
-import com.airbnb.epoxy.kotlinsample.models.itemCustomView
-import com.airbnb.epoxy.kotlinsample.models.itemEpoxyHolder
-import com.airbnb.epoxy.kotlinsample.models.postNewsFeed
-import com.airbnb.epoxy.kotlinsample.views.carouselNoSnap
 import com.airbnb.epoxy.toro.PlayerSelector
-import com.airbnb.epoxy.widget.EthanRecyclerView
-import com.airbnb.epoxy.widget.PressablePlayerSelector
+import com.airbnb.epoxy.widget.ToroEpoxyCarousel
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var recyclerView: EthanRecyclerView
+    private lateinit var recyclerView: ToroEpoxyCarousel
 
     internal var selector = PlayerSelector.DEFAULT
 

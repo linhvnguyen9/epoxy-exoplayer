@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Context.POWER_SERVICE
 import android.graphics.Rect
 import android.os.Build
-import android.os.Debug
 import android.os.Handler
 import android.os.Message
 import android.os.Parcel
@@ -31,10 +30,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.customview.view.AbsSavedState
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.RecyclerListener
+import androidx.recyclerview.widget.SnapHelper
 import com.airbnb.epoxy.ActivityRecyclerPool
 import com.airbnb.epoxy.AutoModel
-import com.airbnb.epoxy.Carousel
+import com.airbnb.epoxy.Carousel.SnapHelperFactory
 import com.airbnb.epoxy.EpoxyAdapter
 import com.airbnb.epoxy.EpoxyController
 import com.airbnb.epoxy.EpoxyItemSpacingDecorator
@@ -64,7 +66,7 @@ import java.util.ArrayList
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 
-open class EthanRecyclerView @JvmOverloads constructor(
+open class ToroEpoxyCarousel @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
@@ -82,13 +84,26 @@ open class EthanRecyclerView @JvmOverloads constructor(
     private var animatorFinishHandler: Handler? = null  // null = not attached/detached
     private var behaviorCallback: BehaviorCallback? = null
 
+    val NO_VALUE_SET = -1
+
+    private val defaultGlobalSnapHelperFactory: SnapHelperFactory = object : SnapHelperFactory() {
+        override fun buildSnapHelper(context: Context?): SnapHelper {
+            return LinearSnapHelper()
+        }
+    }
+
+    @Dimension(unit = Dimension.DP)
+    private val defaultSpacingBetweenItemsDp = 8
+
+    private val numViewsToShowOnScreen = 0f
+
     init {
         playerManager = PlayerManager()
         childLayoutChangeListener = ChildLayoutChangeListener(this)
         requestDisallowInterceptTouchEvent(true)
     }
 
-    private fun setRecyclerListener2(listener: EthanRecyclerView.RecyclerListener?) {
+    private fun setRecyclerListener2(listener: ToroEpoxyCarousel.RecyclerListener?) {
         if (recyclerListener == null) {
             recyclerListener = RecyclerListenerImpl(this)
         }
@@ -220,7 +235,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
                             }
                             // Don't check the attach result, because the player may be managed already.
                             if (!holder.isPlaying) {  // not playing or not ready to play.
-                                playerManager.initialize(holder, this@EthanRecyclerView)
+                                playerManager.initialize(holder, this@ToroEpoxyCarousel)
                                 Log.d("TAG", "initialize")
                             }else{
                                 Log.d("TAG", "isPlaying")
@@ -241,7 +256,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
                         }
                         // Don't check the attach result, because the player may be managed already.
                         if (!holder.isPlaying) {  // not playing or not ready to play.
-                            playerManager.initialize(holder, this@EthanRecyclerView)
+                            playerManager.initialize(holder, this@ToroEpoxyCarousel)
                             Log.d("TAG", "initialize")
                         }else{
                             Log.d("TAG", "isPlaying")
@@ -452,7 +467,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
      */
     fun getLatestPlaybackInfos(): SparseArray<PlaybackInfo> {
         val cache = SparseArray<PlaybackInfo>()
-        val activePlayers = this.filterBy(EthanRecyclerView.Filter.PLAYING)
+        val activePlayers = this.filterBy(ToroEpoxyCarousel.Filter.PLAYING)
         // This will update hotCache and coldCache if they are available.
         for (player in activePlayers) {
             this.savePlaybackInfo(player.playerOrder, player.currentPlaybackInfo)
@@ -659,9 +674,9 @@ open class EthanRecyclerView @JvmOverloads constructor(
         if (saveStates != null) playbackInfoCache.restoreStates(saveStates)
     }
 
-    private class RecyclerListenerImpl internal constructor(internal val container: EthanRecyclerView) :
-        EthanRecyclerView.RecyclerListener {
-        var delegate: EthanRecyclerView.RecyclerListener? = null
+    private class RecyclerListenerImpl internal constructor(internal val container: ToroEpoxyCarousel) :
+        ToroEpoxyCarousel.RecyclerListener {
+        var delegate: ToroEpoxyCarousel.RecyclerListener? = null
 
         override fun onViewRecycled(holder: EpoxyPlayerHolder) {
             if (this.delegate != null) this.delegate!!.onViewRecycled(holder)
@@ -774,7 +789,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
      * A [Handler.Callback] that will fake a scroll with [.SCROLL_STATE_IDLE] to refresh
      * all the playback. This is relatively expensive.
      */
-    private class AnimatorHelper internal constructor(private val container: EthanRecyclerView) :
+    private class AnimatorHelper internal constructor(private val container: ToroEpoxyCarousel) :
         Handler.Callback {
 
         override fun handleMessage(msg: Message): Boolean {
@@ -831,23 +846,23 @@ open class EthanRecyclerView @JvmOverloads constructor(
     //   super(context, attrs);
     // }
 
-        (delegate: CoordinatorLayout.Behavior<EthanRecyclerView>) :
-        CoordinatorLayout.Behavior<EthanRecyclerView>(),
+        (delegate: CoordinatorLayout.Behavior<ToroEpoxyCarousel>) :
+        CoordinatorLayout.Behavior<ToroEpoxyCarousel>(),
         Handler.Callback {
 
-        internal val delegate: CoordinatorLayout.Behavior<in EthanRecyclerView>
+        internal val delegate: CoordinatorLayout.Behavior<in ToroEpoxyCarousel>
         internal var callback: BehaviorCallback? = null
 
         internal val scrollConsumed = AtomicBoolean(false)
 
         internal var handler: Handler? = null
 
-        internal fun onViewAttached(container: EthanRecyclerView) {
+        internal fun onViewAttached(container: ToroEpoxyCarousel) {
             if (handler == null) handler = Handler(this)
             this.callback = container.behaviorCallback
         }
 
-        internal fun onViewDetached(container: EthanRecyclerView) {
+        internal fun onViewDetached(container: ToroEpoxyCarousel) {
             if (handler != null) {
                 handler!!.removeCallbacksAndMessages(null)
                 handler = null
@@ -877,7 +892,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
         /// We only need to intercept the following 3 methods:
 
         override fun onInterceptTouchEvent( //
-            parent: CoordinatorLayout, child: EthanRecyclerView, ev: MotionEvent
+            parent: CoordinatorLayout, child: ToroEpoxyCarousel, ev: MotionEvent
         ): Boolean {
             if (this.handler != null) {
                 this.handler!!.removeCallbacksAndMessages(null)
@@ -888,7 +903,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
 
         override fun onTouchEvent(
             parent: CoordinatorLayout,
-            child: EthanRecyclerView,
+            child: ToroEpoxyCarousel,
             ev: MotionEvent
         ): Boolean {
             if (this.handler != null) {
@@ -899,7 +914,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
         }
 
         override fun onStartNestedScroll(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             directTargetChild: View, target: View, axes: Int, type: Int
         ): Boolean {
             if (this.handler != null) {
@@ -932,32 +947,32 @@ open class EthanRecyclerView @JvmOverloads constructor(
         }
 
         @ColorInt
-        override fun getScrimColor(parent: CoordinatorLayout, child: EthanRecyclerView): Int {
+        override fun getScrimColor(parent: CoordinatorLayout, child: ToroEpoxyCarousel): Int {
             return delegate.getScrimColor(parent, child)
         }
 
         @FloatRange(from = 0.0, to = 1.0)
-        override fun getScrimOpacity(parent: CoordinatorLayout, child: EthanRecyclerView): Float {
+        override fun getScrimOpacity(parent: CoordinatorLayout, child: ToroEpoxyCarousel): Float {
             return delegate.getScrimOpacity(parent, child)
         }
 
         override fun blocksInteractionBelow(
             parent: CoordinatorLayout,
-            child: EthanRecyclerView
+            child: ToroEpoxyCarousel
         ): Boolean {
             return delegate.blocksInteractionBelow(parent, child)
         }
 
         override fun layoutDependsOn(
             parent: CoordinatorLayout,
-            child: EthanRecyclerView,
+            child: ToroEpoxyCarousel,
             dependency: View
         ): Boolean {
             return delegate.layoutDependsOn(parent, child, dependency)
         }
 
         override fun onDependentViewChanged(
-            parent: CoordinatorLayout, child: EthanRecyclerView,
+            parent: CoordinatorLayout, child: ToroEpoxyCarousel,
             dependency: View
         ): Boolean {
             return delegate.onDependentViewChanged(parent, child, dependency)
@@ -965,7 +980,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
 
         override fun onDependentViewRemoved(
             parent: CoordinatorLayout,
-            child: EthanRecyclerView,
+            child: ToroEpoxyCarousel,
             dependency: View
         ) {
             delegate.onDependentViewRemoved(parent, child, dependency)
@@ -973,7 +988,7 @@ open class EthanRecyclerView @JvmOverloads constructor(
 
         override fun onMeasureChild(
             parent: CoordinatorLayout,
-            child: EthanRecyclerView,
+            child: ToroEpoxyCarousel,
             parentWidthMeasureSpec: Int,
             widthUsed: Int,
             parentHeightMeasureSpec: Int,
@@ -987,28 +1002,28 @@ open class EthanRecyclerView @JvmOverloads constructor(
 
         override fun onLayoutChild(
             parent: CoordinatorLayout,
-            child: EthanRecyclerView,
+            child: ToroEpoxyCarousel,
             layoutDirection: Int
         ): Boolean {
             return delegate.onLayoutChild(parent, child, layoutDirection)
         }
 
         override fun onNestedScrollAccepted(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             directTargetChild: View, target: View, axes: Int, type: Int
         ) {
             delegate.onNestedScrollAccepted(layout, child, directTargetChild, target, axes, type)
         }
 
         override fun onStopNestedScroll(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             target: View, type: Int
         ) {
             delegate.onStopNestedScroll(layout, child, target, type)
         }
 
         override fun onNestedScroll(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             target: View, dxConsumed: Int, dyConsumed: Int, dxUnconsumed: Int, dyUnconsumed: Int,
             type: Int
         ) {
@@ -1019,42 +1034,42 @@ open class EthanRecyclerView @JvmOverloads constructor(
         }
 
         override fun onNestedPreScroll(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             target: View, dx: Int, dy: Int, consumed: IntArray, type: Int
         ) {
             delegate.onNestedPreScroll(layout, child, target, dx, dy, consumed, type)
         }
 
         override fun onNestedFling(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             target: View, velocityX: Float, velocityY: Float, consumed: Boolean
         ): Boolean {
             return delegate.onNestedFling(layout, child, target, velocityX, velocityY, consumed)
         }
 
         override fun onNestedPreFling(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             target: View, velocityX: Float, velocityY: Float
         ): Boolean {
             return delegate.onNestedPreFling(layout, child, target, velocityX, velocityY)
         }
 
         override fun onApplyWindowInsets(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             insets: WindowInsetsCompat
         ): WindowInsetsCompat {
             return delegate.onApplyWindowInsets(layout, child, insets)
         }
 
         override fun onRequestChildRectangleOnScreen(
-            layout: CoordinatorLayout, child: EthanRecyclerView,
+            layout: CoordinatorLayout, child: ToroEpoxyCarousel,
             rectangle: Rect, immediate: Boolean
         ): Boolean {
             return delegate.onRequestChildRectangleOnScreen(layout, child, rectangle, immediate)
         }
 
         override fun onRestoreInstanceState(
-            parent: CoordinatorLayout, child: EthanRecyclerView,
+            parent: CoordinatorLayout, child: ToroEpoxyCarousel,
             state: Parcelable
         ) {
             delegate.onRestoreInstanceState(parent, child, state)
@@ -1062,13 +1077,13 @@ open class EthanRecyclerView @JvmOverloads constructor(
 
         override fun onSaveInstanceState(
             parent: CoordinatorLayout,
-            child: EthanRecyclerView
+            child: ToroEpoxyCarousel
         ): Parcelable? {
             return delegate.onSaveInstanceState(parent, child)
         }
 
         override fun getInsetDodgeRect(
-            parent: CoordinatorLayout, child: EthanRecyclerView,
+            parent: CoordinatorLayout, child: ToroEpoxyCarousel,
             rect: Rect
         ): Boolean {
             return delegate.getInsetDodgeRect(parent, child, rect)
@@ -1107,12 +1122,12 @@ open class EthanRecyclerView @JvmOverloads constructor(
         }
     }
 
-    class ChildLayoutChangeListener(container: EthanRecyclerView) : View.OnLayoutChangeListener {
+    class ChildLayoutChangeListener(container: ToroEpoxyCarousel) : View.OnLayoutChangeListener {
 
-        val containerRef: WeakReference<EthanRecyclerView>
+        val containerRef: WeakReference<ToroEpoxyCarousel>
 
         init {
-            this.containerRef = WeakReference<EthanRecyclerView>(container)
+            this.containerRef = WeakReference<ToroEpoxyCarousel>(container)
         }
 
         override fun onLayoutChange(

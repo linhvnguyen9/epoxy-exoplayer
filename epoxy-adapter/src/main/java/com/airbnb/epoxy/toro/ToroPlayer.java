@@ -20,7 +20,7 @@ import android.view.View;
 
 import com.airbnb.epoxy.media.PlaybackInfo;
 import com.airbnb.epoxy.media.VolumeInfo;
-import com.airbnb.epoxy.widget.EthanRecyclerView;
+import com.airbnb.epoxy.widget.ToroEpoxyCarousel;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -53,7 +53,7 @@ public interface ToroPlayer {
    * @param container the RecyclerView contains this Player.
    * @param playbackInfo initialize info for the preparation.
    */
-  void initialize(@NonNull EthanRecyclerView container, @NonNull PlaybackInfo playbackInfo);
+  void initialize(@NonNull ToroEpoxyCarousel container, @NonNull PlaybackInfo playbackInfo);
 
   /**
    * Start playback or resume from a pausing state.

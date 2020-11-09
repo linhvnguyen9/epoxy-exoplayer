@@ -25,7 +25,7 @@ import com.airbnb.epoxy.helper.ToroPlayerHelper;
 import com.airbnb.epoxy.media.PlaybackInfo;
 import com.airbnb.epoxy.media.VolumeInfo;
 import com.airbnb.epoxy.toro.ToroPlayer;
-import com.airbnb.epoxy.widget.EthanRecyclerView;
+import com.airbnb.epoxy.widget.ToroEpoxyCarousel;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ui.PlayerView;
 
@@ -48,7 +48,7 @@ public class ExoPlayerViewHelper extends ToroPlayerHelper {
 
   // Container is no longer required for constructing new instance.
   @SuppressWarnings("unused") @RemoveIn(version = "3.6.0") @Deprecated  //
-  public ExoPlayerViewHelper(EthanRecyclerView container, @NonNull ToroPlayer player, @NonNull Uri uri) {
+  public ExoPlayerViewHelper(ToroEpoxyCarousel container, @NonNull ToroPlayer player, @NonNull Uri uri) {
     this(player, uri);
   }
 

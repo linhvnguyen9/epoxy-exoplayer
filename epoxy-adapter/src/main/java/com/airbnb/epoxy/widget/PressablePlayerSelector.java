@@ -21,7 +21,6 @@ import android.view.View;
 import android.view.View.OnLongClickListener;
 
 import com.airbnb.epoxy.EpoxyPlayerHolder;
-import com.airbnb.epoxy.EpoxyRecyclerView;
 import com.airbnb.epoxy.annotations.Beta;
 import com.airbnb.epoxy.toro.PlayerSelector;
 import com.airbnb.epoxy.toro.ToroPlayer;
@@ -46,7 +45,7 @@ import static java.util.Collections.singletonList;
  *
  * A 'Press to Play' {@link PlayerSelector}.
  *
- * This is a {@link OnLongClickListener} that co-operates with {@link EthanRecyclerView} to selectively
+ * This is a {@link OnLongClickListener} that co-operates with {@link ToroEpoxyCarousel} to selectively
  * trigger the playback. The common usecase is to allow user to long click on a {@link ToroPlayer}
  * to trigger its playback. In that case, we should set that {@link ToroPlayer} to highest priority
  * among the candidates, and also to clear its priority when user scroll it out of the playable region.
@@ -58,7 +57,7 @@ import static java.util.Collections.singletonList;
 @SuppressWarnings("WeakerAccess") @Beta //
 public class PressablePlayerSelector implements PlayerSelector, OnLongClickListener {
 
-  protected final WeakReference<EthanRecyclerView> weakContainer;
+  protected final WeakReference<ToroEpoxyCarousel> weakContainer;
   protected final PlayerSelector delegate;
   protected final AtomicInteger toPlay = new AtomicInteger(NO_POSITION);
   protected final AtomicInteger toPause = new AtomicInteger(NO_POSITION);
@@ -75,22 +74,22 @@ public class PressablePlayerSelector implements PlayerSelector, OnLongClickListe
     }
   };
 
-  public PressablePlayerSelector(EthanRecyclerView container) {
+  public PressablePlayerSelector(ToroEpoxyCarousel container) {
     this(container, DEFAULT);
   }
 
-  public PressablePlayerSelector(EthanRecyclerView container, PlayerSelector delegate) {
+  public PressablePlayerSelector(ToroEpoxyCarousel container, PlayerSelector delegate) {
     this(new WeakReference<>(ToroUtil.checkNotNull(container)), ToroUtil.checkNotNull(delegate));
   }
 
-  PressablePlayerSelector(WeakReference<EthanRecyclerView> container, PlayerSelector delegate) {
+  PressablePlayerSelector(WeakReference<ToroEpoxyCarousel> container, PlayerSelector delegate) {
     this.weakContainer = container;
     this.delegate = ToroUtil.checkNotNull(delegate);
   }
 
   @Override public boolean onLongClick(View v) {
     Log.d("TAG", "CLICK NOW");
-    EthanRecyclerView container = weakContainer.get();
+    ToroEpoxyCarousel container = weakContainer.get();
     if (container == null) return false;  // fail fast
 
     toPause.set(NO_POSITION); // long click will always mean to 'press to play'.
@@ -108,7 +107,7 @@ public class PressablePlayerSelector implements PlayerSelector, OnLongClickListe
     return handled;
   }
 
-  @Override @NonNull public Collection<ToroPlayer> select(@NonNull EthanRecyclerView container,
+  @Override @NonNull public Collection<ToroPlayer> select(@NonNull ToroEpoxyCarousel container,
       @NonNull List<ToroPlayer> items) {
     // Make sure client doesn't use this instance to wrong Container.
     if (container != this.weakContainer.get()) return new ArrayList<>();
@@ -146,7 +145,7 @@ public class PressablePlayerSelector implements PlayerSelector, OnLongClickListe
 
   public boolean toPlay(int position) {
     if (toPause.get() == position) toPause.set(NO_POSITION);
-    EthanRecyclerView container = weakContainer.get();
+    ToroEpoxyCarousel container = weakContainer.get();
     if (container == null) return false;
     if (position != toPlay.getAndSet(position)) {
       container.onScrollStateChanged(RecyclerView.SCROLL_STATE_IDLE);
