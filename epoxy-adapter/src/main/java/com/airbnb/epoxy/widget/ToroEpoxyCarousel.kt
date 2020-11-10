@@ -11,6 +11,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.os.PowerManager
 import android.util.AttributeSet
+import android.util.DisplayMetrics
 import android.util.Log
 import android.util.SparseArray
 import android.util.TypedValue
@@ -36,13 +37,14 @@ import androidx.recyclerview.widget.RecyclerView.RecyclerListener
 import androidx.recyclerview.widget.SnapHelper
 import com.airbnb.epoxy.ActivityRecyclerPool
 import com.airbnb.epoxy.AutoModel
-import com.airbnb.epoxy.Carousel.SnapHelperFactory
 import com.airbnb.epoxy.EpoxyAdapter
 import com.airbnb.epoxy.EpoxyController
 import com.airbnb.epoxy.EpoxyItemSpacingDecorator
 import com.airbnb.epoxy.EpoxyModel
 import com.airbnb.epoxy.EpoxyPlayerHolder
 import com.airbnb.epoxy.EpoxyRecyclerView
+import com.airbnb.epoxy.ModelProp
+import com.airbnb.epoxy.ModelView
 import com.airbnb.epoxy.SimpleEpoxyController
 import com.airbnb.epoxy.TypedEpoxyController
 import com.airbnb.epoxy.UnboundedViewPool
@@ -66,6 +68,7 @@ import java.util.ArrayList
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 
+@ModelView(saveViewState = true, autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
 open class ToroEpoxyCarousel @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -86,16 +89,79 @@ open class ToroEpoxyCarousel @JvmOverloads constructor(
 
     val NO_VALUE_SET = -1
 
-    private val defaultGlobalSnapHelperFactory: SnapHelperFactory = object : SnapHelperFactory() {
+    //region Carousel's code
+    private var defaultGlobalSnapHelperFactory: SnapHelperFactory = object : SnapHelperFactory() {
         override fun buildSnapHelper(context: Context?): SnapHelper {
             return LinearSnapHelper()
         }
     }
 
-    @Dimension(unit = Dimension.DP)
-    private val defaultSpacingBetweenItemsDp = 8
+    val snapHelperFactory = defaultGlobalSnapHelperFactory
 
-    private val numViewsToShowOnScreen = 0f
+    @ModelProp
+    override fun setHasFixedSize(hasFixedSize: Boolean) {
+        super.setHasFixedSize(hasFixedSize)
+    }
+
+    /**
+     * Set the number of views to show on screen in this carousel at a time, partial numbers are
+     * allowed.
+     *
+     *
+     * This is useful where you want to easily control for the number of items on screen,
+     * regardless of screen size. For example, you could set this to 1.2f so that one view is shown in
+     * full and 20% of the next view "peeks" from the edge to indicate that there is more content to
+     * scroll to.
+     *
+     *
+     * Another pattern is setting a different view count depending on whether the device is phone
+     * or tablet.
+     *
+     *
+     * Additionally, if a LinearLayoutManager is used this value will be forwarded to [ ][LinearLayoutManager.setInitialPrefetchItemCount] as a performance optimization.
+     *
+     *
+     * If you want to only change the prefetch count without changing the view size you can simply
+     * use [.setInitialPrefetchItemCount]
+     */
+    @ModelProp(group = "prefetch")
+    open fun setNumViewsToShowOnScreen(viewCount: Float) {
+        numViewsToShowOnScreen = viewCount
+        setInitialPrefetchItemCount(Math.ceil(viewCount.toDouble()).toInt())
+    }
+
+    /**
+     * @return The number of views to show on screen in this carousel at a time.
+     */
+    open fun getNumViewsToShowOnScreen(): Float {
+        return numViewsToShowOnScreen
+    }
+
+    /**
+     * If you are using a Linear or Grid layout manager you can use this to set the item prefetch
+     * count. Only use this if you are not using {@link #setNumViewsToShowOnScreen(float)}
+     *
+     * @see #setNumViewsToShowOnScreen(float)
+     * @see LinearLayoutManager#setInitialPrefetchItemCount(int)
+     */
+    @ModelProp(group = "prefetch")
+    open fun setInitialPrefetchItemCount(numItemsToPrefetch: Int) {
+        check(numItemsToPrefetch >= 0) { "numItemsToPrefetch must be greater than 0" }
+
+        // Use the linearlayoutmanager default of 2 if the user did not specify one
+        val prefetchCount = if (numItemsToPrefetch == 0) 2 else numItemsToPrefetch
+        val layoutManager = layoutManager
+        if (layoutManager is LinearLayoutManager) {
+            (layoutManager as LinearLayoutManager).initialPrefetchItemCount =
+                prefetchCount
+        }
+    }
+    //endregion
+
+    @Dimension(unit = Dimension.DP)
+    private var defaultSpacingBetweenItemsDp = 8
+
+    private var numViewsToShowOnScreen = 0f
 
     init {
         playerManager = PlayerManager()
@@ -118,6 +184,30 @@ open class ToroEpoxyCarousel @JvmOverloads constructor(
         val holder = child.tag
 
         if (holder !is EpoxyPlayerHolder) return
+
+        //Carousel's code
+        if (numViewsToShowOnScreen > 0) {
+            val childLayoutParams = child.layoutParams
+            child.setTag(R.id.epoxy_recycler_view_child_initial_size_id, childLayoutParams.width)
+            val itemSpacingPx = spacingDecorator.pxBetweenItems
+            var spaceBetweenItems = 0
+            if (itemSpacingPx > 0) {
+                // The item decoration space is not counted in the width of the view
+                spaceBetweenItems = (itemSpacingPx * numViewsToShowOnScreen).toInt()
+            }
+            val isScrollingHorizontally = layoutManager!!.canScrollHorizontally()
+            val itemSizeInScrollingDirection =
+                ((getSpaceForChildren(isScrollingHorizontally) - spaceBetweenItems)
+                    / numViewsToShowOnScreen).toInt()
+            if (isScrollingHorizontally) {
+                childLayoutParams.width = itemSizeInScrollingDirection
+            } else {
+                childLayoutParams.height = itemSizeInScrollingDirection
+            }
+
+            // We don't need to request layout because the layout manager will do that for us next
+        }
+        //end of Carousel's code
 
         playbackInfoCache.onPlayerAttached(holder)
         if (playerManager.manages(holder)) {
@@ -174,6 +264,17 @@ open class ToroEpoxyCarousel @JvmOverloads constructor(
         // finally release the player
         // if player manager could not manager player, release by itself.
         if (!playerManager.release(holder)) holder.release()
+
+        /////////Carousel's code
+        // Restore the view width that existed before we modified it
+        val initialWidth = child.getTag(R.id.epoxy_recycler_view_child_initial_size_id) //TODO: Check if putting carousel's code here is legit
+
+        if (initialWidth is Int) {
+            val params = child.layoutParams
+            params.width = initialWidth
+            child.setTag(R.id.epoxy_recycler_view_child_initial_size_id, null)
+            // No need to request layout since the view is unbound and not attached to window
+        }
     }
 
     override fun onScrollStateChanged(state: Int) {
@@ -1325,6 +1426,26 @@ open class ToroEpoxyCarousel @JvmOverloads constructor(
     protected open fun init() {
         clipToPadding = false
         initViewPool()
+
+        //TODO: Uncomment carousel code
+//        // When used as a model the padding can't be set via xml so we set it programmatically
+//        val defaultSpacingDp: Int = defaultSpacingBetweenItemsDp
+//
+//        if (defaultSpacingDp >= 0) {
+//            setItemSpacingDp(defaultSpacingDp)
+//            if (paddingLeft == 0 && paddingRight == 0 && paddingTop == 0 && paddingBottom == 0) {
+//                // Use the item spacing as the default padding if no other padding has been set
+//                paddingDp = defaultSpacingDp
+//            }
+//        }
+//
+//        val snapHelperFactory: SnapHelperFactory = snapHelperFactory
+//        snapHelperFactory?.buildSnapHelper(context)?.attachToRecyclerView(this)
+//
+//        // Carousels will be detached when their parent recyclerview is
+//
+//        // Carousels will be detached when their parent recyclerview is
+//        setRemoveAdapterWhenDetachedFromWindow(false)
     }
 
     /**
@@ -1802,6 +1923,254 @@ open class ToroEpoxyCarousel @JvmOverloads constructor(
         }
     }
 
+    //region Carousel's code
+    private fun getSpaceForChildren(horizontal: Boolean): Int {
+        return if (horizontal) {
+            (getTotalWidthPx(this)
+                - paddingLeft
+                - if (clipToPadding) paddingRight else 0)
+            // If child views will be showing through padding than we include just one side of padding
+            // since when the list is at position 0 only the child towards the end of the list will show
+            // through the padding.
+        } else {
+            (getTotalHeightPx(this)
+                - paddingTop
+                - if (clipToPadding) paddingBottom else 0)
+        }
+    }
+    /**
+     * Set a dimension resource to specify the padding value to use on each side of the carousel and
+     * in between carousel items.
+     */
+    @ModelProp(group = "padding")
+    open fun setPaddingRes(@DimenRes paddingRes: Int) {
+        val px = resToPx(paddingRes)
+        setPadding(px, px, px, px)
+        setItemSpacingPx(px)
+    }
+    /**
+     * Set a DP value to use as the padding on each side of the carousel and in between carousel
+     * items.
+     *
+     *
+     * The default as the value returned by [.getDefaultSpacingBetweenItemsDp]
+     */
+    @JvmOverloads
+    @ModelProp(group = "padding")
+    open fun setPaddingDp(@Dimension(unit = Dimension.DP) paddingDp: Int = NO_VALUE_SET) {
+        val px =
+            dpToPx(if (paddingDp != NO_VALUE_SET) paddingDp else defaultSpacingBetweenItemsDp)
+        setPadding(px, px, px, px)
+        setItemSpacingPx(px)
+    }
+
+    /**
+     * Use the [Padding] class to specify individual padding values for each side of the
+     * carousel, as well as item spacing.
+     *
+     *
+     * A value of null will set all padding and item spacing to 0.
+     */
+    @ModelProp(group = "padding")
+    open fun setPadding(padding: Padding?) {
+        if (padding == null) {
+            setPaddingDp(0)
+        } else if (padding.paddingType == Padding.PaddingType.PX) {
+            setPadding(padding.left, padding.top, padding.right, padding.bottom)
+            setItemSpacingPx(padding.itemSpacing)
+        } else if (padding.paddingType == Padding.PaddingType.DP) {
+            setPadding(
+                dpToPx(padding.left),
+                dpToPx(padding.top),
+                dpToPx(padding.right),
+                dpToPx(padding.bottom)
+            )
+            setItemSpacingPx(dpToPx(padding.itemSpacing))
+        } else if (padding.paddingType == Padding.PaddingType.RESOURCE) {
+            setPadding(
+                resToPx(padding.left),
+                resToPx(padding.top),
+                resToPx(padding.right),
+                resToPx(padding.bottom)
+            )
+            setItemSpacingPx(resToPx(padding.itemSpacing))
+        }
+    }
+
+    /** Provide a SnapHelper implementation you want to use with a Carousel.  */
+    abstract class SnapHelperFactory {
+        /**
+         * Create and return a new instance of a [androidx.recyclerview.widget.SnapHelper] for use
+         * with a Carousel.
+         */
+        abstract fun buildSnapHelper(context: Context?): SnapHelper
+    }
+
+    /**
+     * Used to specify individual padding values programmatically.
+     *
+     * @see .setPadding
+     */
+    class Padding
+    /**
+     * @param left Left padding.
+     * @param top Top padding.
+     * @param right Right padding.
+     * @param bottom Bottom padding.
+     * @param itemSpacing Space to add between each carousel item. Will be implemented via an item
+     * decoration.
+     * @param paddingType Unit / Type of the given paddings/ itemspacing.
+     */ constructor(
+        val left: Int,
+        val top: Int,
+        val right: Int,
+        val bottom: Int,
+        val itemSpacing: Int,
+        val paddingType: PaddingType
+    ) {
+        enum class PaddingType {
+            PX, DP, RESOURCE
+        }
+        /**
+         * @param paddingPx Padding in pixels to add on all sides of the carousel
+         * @param itemSpacingPx Space in pixels to add between each carousel item. Will be implemented
+         * via an item decoration.
+         */
+        constructor(@Px paddingPx: Int, @Px itemSpacingPx: Int) : this(
+            paddingPx,
+            paddingPx,
+            paddingPx,
+            paddingPx,
+            itemSpacingPx,
+            PaddingType.PX
+        ) {
+        }
+
+        /**
+         * @param leftPx Left padding in pixels.
+         * @param topPx Top padding in pixels.
+         * @param rightPx Right padding in pixels.
+         * @param bottomPx Bottom padding in pixels.
+         * @param itemSpacingPx Space in pixels to add between each carousel item. Will be implemented
+         * via an item decoration.
+         */
+        constructor(
+            @Px leftPx: Int,
+            @Px topPx: Int,
+            @Px rightPx: Int,
+            @Px bottomPx: Int,
+            @Px itemSpacingPx: Int
+        ) : this(leftPx, topPx, rightPx, bottomPx, itemSpacingPx, PaddingType.PX) {
+        }
+
+        override fun equals(o: Any?): Boolean {
+            if (this === o) {
+                return true
+            }
+            if (o == null || javaClass != o.javaClass) {
+                return false
+            }
+            val padding = o as Padding
+            if (left != padding.left) {
+                return false
+            }
+            if (top != padding.top) {
+                return false
+            }
+            if (right != padding.right) {
+                return false
+            }
+            return if (bottom != padding.bottom) {
+                false
+            } else itemSpacing == padding.itemSpacing
+        }
+
+        override fun hashCode(): Int {
+            var result = left
+            result = 31 * result + top
+            result = 31 * result + right
+            result = 31 * result + bottom
+            result = 31 * result + itemSpacing
+            return result
+        }
+
+        companion object {
+            /**
+             * @param paddingRes Padding as dimension resource.
+             * @param itemSpacingRes Space as dimension resource to add between each carousel item. Will be
+             * implemented via an item decoration.
+             */
+            fun resource(@DimenRes paddingRes: Int, @DimenRes itemSpacingRes: Int): Padding {
+                return Padding(
+                    paddingRes,
+                    paddingRes,
+                    paddingRes,
+                    paddingRes,
+                    itemSpacingRes,
+                    PaddingType.RESOURCE
+                )
+            }
+
+            /**
+             * @param leftRes Left padding as dimension resource.
+             * @param topRes Top padding as dimension resource.
+             * @param rightRes Right padding as dimension resource.
+             * @param bottomRes Bottom padding as dimension resource.
+             * @param itemSpacingRes Space as dimension resource to add between each carousel item. Will be
+             * implemented via an item decoration.
+             */
+            fun resource(
+                @DimenRes leftRes: Int,
+                @DimenRes topRes: Int,
+                @DimenRes rightRes: Int,
+                @DimenRes bottomRes: Int,
+                @DimenRes itemSpacingRes: Int
+            ): Padding {
+                return Padding(
+                    leftRes, topRes, rightRes, bottomRes, itemSpacingRes, PaddingType.RESOURCE
+                )
+            }
+
+            /**
+             * @param paddingDp Padding in dp.
+             * @param itemSpacingDp Space in dp to add between each carousel item. Will be implemented via
+             * an item decoration.
+             */
+            fun dp(
+                @Dimension(unit = Dimension.DP) paddingDp: Int,
+                @Dimension(unit = Dimension.DP) itemSpacingDp: Int
+            ): Padding {
+                return Padding(
+                    paddingDp,
+                    paddingDp,
+                    paddingDp,
+                    paddingDp,
+                    itemSpacingDp,
+                    PaddingType.DP
+                )
+            }
+
+            /**
+             * @param leftDp Left padding in dp.
+             * @param topDp Top padding in dp.
+             * @param rightDp Right padding in dp.
+             * @param bottomDp Bottom padding in dp.
+             * @param itemSpacingDp Space in dp to add between each carousel item. Will be implemented via
+             * an item decoration.
+             */
+            fun dp(
+                @Dimension(unit = Dimension.DP) leftDp: Int,
+                @Dimension(unit = Dimension.DP) topDp: Int,
+                @Dimension(unit = Dimension.DP) rightDp: Int,
+                @Dimension(unit = Dimension.DP) bottomDp: Int,
+                @Dimension(unit = Dimension.DP) itemSpacingDp: Int
+            ): Padding {
+                return Padding(leftDp, topDp, rightDp, bottomDp, itemSpacingDp, PaddingType.DP)
+            }
+        }
+    }
+    //endregion
+
     companion object {
         private const val DEFAULT_ADAPTER_REMOVAL_DELAY_MS = 2000
 
@@ -1810,5 +2179,29 @@ open class ToroEpoxyCarousel @JvmOverloads constructor(
          * only needs to hold pools for active activities.
          */
         private val ACTIVITY_RECYCLER_POOL = ActivityRecyclerPool()
+
+        //Carousel's static funs
+        @Px
+        private fun getTotalWidthPx(view: View): Int {
+            if (view.width > 0) {
+                // Can only get a width if we are laid out
+                return view.width
+            }
+
+            // Fall back to assuming we want the full screen width
+            val metrics: DisplayMetrics = view.context.getResources().getDisplayMetrics()
+            return metrics.widthPixels
+        }
+
+        @Px
+        private fun getTotalHeightPx(view: View): Int {
+            if (view.height > 0) {
+                return view.height
+            }
+
+            // Fall back to assuming we want the full screen width
+            val metrics = view.context.resources.displayMetrics
+            return metrics.heightPixels
+        }
     }
 }
