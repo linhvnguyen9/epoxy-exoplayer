@@ -68,7 +68,7 @@ import java.util.ArrayList
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 
-@ModelView(saveViewState = true, autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
+@ModelView(saveViewState = true, autoLayout = ModelView.Size.MATCH_WIDTH_MATCH_HEIGHT)
 open class ToroEpoxyCarousel @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -1510,23 +1510,23 @@ open class ToroEpoxyCarousel @JvmOverloads constructor(
      * [.setClipToPadding] is set to false.
      */
     protected open fun createLayoutManager(): RecyclerView.LayoutManager {
-        val layoutParams = layoutParams
-
-        // 0 represents matching constraints in a LinearLayout or ConstraintLayout
-        if (layoutParams.height == RecyclerView.LayoutParams.MATCH_PARENT || layoutParams.height == 0) {
-
-            if (layoutParams.width == RecyclerView.LayoutParams.MATCH_PARENT || layoutParams.width == 0) {
-                // If we are filling as much space as possible then we usually are fixed size
-                setHasFixedSize(true)
-            }
-
-            // A sane default is a vertically scrolling linear layout
-            return LinearLayoutManager(context)
-        } else {
+//        val layoutParams = layoutParams
+//
+////         0 represents matching constraints in a LinearLayout or ConstraintLayout
+//        if (layoutParams.height == RecyclerView.LayoutParams.MATCH_PARENT || layoutParams.height == 0) {
+//
+//            if (layoutParams.width == RecyclerView.LayoutParams.MATCH_PARENT || layoutParams.width == 0) {
+////                 If we are filling as much space as possible then we usually are fixed size
+//                setHasFixedSize(true)
+//            }
+//
+////             A sane default is a vertically scrolling linear layout
+//            return LinearLayoutManager(context)
+//        } else {
             // This is usually the case for horizontally scrolling carousels and should be a sane
             // default
             return LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        }
+//        }
     }
 
     override fun setLayoutManager(layout: RecyclerView.LayoutManager?) {
