@@ -1427,22 +1427,19 @@ open class ToroEpoxyCarousel @JvmOverloads constructor(
         clipToPadding = false
         initViewPool()
 
-        //TODO: Uncomment carousel code
-//        // When used as a model the padding can't be set via xml so we set it programmatically
-//        val defaultSpacingDp: Int = defaultSpacingBetweenItemsDp
-//
-//        if (defaultSpacingDp >= 0) {
-//            setItemSpacingDp(defaultSpacingDp)
-//            if (paddingLeft == 0 && paddingRight == 0 && paddingTop == 0 && paddingBottom == 0) {
-//                // Use the item spacing as the default padding if no other padding has been set
-//                paddingDp = defaultSpacingDp
-//            }
-//        }
-//
-//        val snapHelperFactory: SnapHelperFactory = snapHelperFactory
-//        snapHelperFactory?.buildSnapHelper(context)?.attachToRecyclerView(this)
-//
-//        // Carousels will be detached when their parent recyclerview is
+        // When used as a model the padding can't be set via xml so we set it programmatically
+        val defaultSpacingDp: Int = defaultSpacingBetweenItemsDp
+
+        if (defaultSpacingDp >= 0) {
+            setItemSpacingDp(defaultSpacingDp)
+            if (paddingLeft == 0 && paddingRight == 0 && paddingTop == 0 && paddingBottom == 0) {
+                // Use the item spacing as the default padding if no other padding has been set
+                setPaddingDp( defaultSpacingDp)
+            }
+        }
+
+        val snapHelperFactory: SnapHelperFactory = snapHelperFactory
+        snapHelperFactory.buildSnapHelper(context).attachToRecyclerView(this)
 //
 //        // Carousels will be detached when their parent recyclerview is
 //        setRemoveAdapterWhenDetachedFromWindow(false)
