@@ -10,6 +10,7 @@ import com.airbnb.epoxy.kotlinsample.models.itemEpoxyHolder
 import com.airbnb.epoxy.kotlinsample.models.postNewsFeed
 import com.airbnb.epoxy.kotlinsample.views.carouselNoSnap
 import com.airbnb.epoxy.toro.CacheManager
+import com.airbnb.epoxy.widget.toroEpoxyCarousel
 
 class NewsFeedController : TypedEpoxyController<List<Any>>(), CacheManager {
 
@@ -27,71 +28,76 @@ class NewsFeedController : TypedEpoxyController<List<Any>>(), CacheManager {
 //        val viewModel = PostViewModel2()
         dataSet.clear()
         dataSet.addAll(data)
-
 //        data?.forEach {
 ////            viewModel.bind(it, PostViewModel.SCREEN_NEWSFEED)
 //            PostNewsFeedModel_().post(it).id(it.id).addTo(this)
 ////            PostItem3BindingModel_().viewModel(viewModel).id(it.id).addTo(this)
 //        }
 
+//        toroEpoxyCarousel {
+//
+//        }
 
         for (i in 0 until data.size) {
-            dataBindingItem {
-                id("data binding $i")
-                text("this is a data binding model")
-                onClick { _ ->
-//                    Toast.makeText(this@MainActivity, "clicked", Toast.LENGTH_LONG).show()
-                }
-                onVisibilityStateChanged { model, view, visibilityState ->
-//                    Log.d(MainActivity.TAG, "$model -> $visibilityState")
-                }
-            }
 
-            itemCustomView {
-                id("custom view $i")
-                color(Color.GREEN)
-                title("this is a green custom view item")
-                listener { _ ->
-//                    Toast.makeText(this@MainActivity, "clicked", Toast.LENGTH_LONG).show()
-                }
-            }
-
-            itemEpoxyHolder {
-                id("view holder $i")
-                title("this is a View Holder item")
-                listener {
-//                    Toast.makeText(this@MainActivity, "clicked", Toast.LENGTH_LONG)
-//                        .show()
-                }
-            }
-
+//            dataBindingItem {
+//                id("data binding $i")
+//                text("this is a data binding model")
+//                onClick { _ ->
+////                    Toast.makeText(this@MainActivity, "clicked", Toast.LENGTH_LONG).show()
+//                }
+//                onVisibilityStateChanged { model, view, visibilityState ->
+////                    Log.d(MainActivity.TAG, "$model -> $visibilityState")
+//                }
+//            }
+//
+//            itemCustomView {
+//                id("custom view $i")
+//                color(Color.GREEN)
+//                title("this is a green custom view item")
+//                listener { _ ->
+////                    Toast.makeText(this@MainActivity, "clicked", Toast.LENGTH_LONG).show()
+//                }
+//            }
+//
+//            itemEpoxyHolder {
+//                id("view holder $i")
+//                title("this is a View Holder item")
+//                listener {
+////                    Toast.makeText(this@MainActivity, "clicked", Toast.LENGTH_LONG)
+////                        .show()
+//                }
+//            }
+//
             postNewsFeed {
                 id("postNewsFeed $i")
 //                selector(selector)
             }
 
-//                postNewsFeedModel {
+////                postNewsFeedModel {
+////
+////                }
 //
-//                }
+//            carouselNoSnap {
+//                id("carousel $i")
+//                models(mutableListOf<CarouselItemCustomViewModel_>().apply {
+//                    val lastPage = 10
+//                    for (j in 0 until lastPage) {
+//                        add(
+//                            CarouselItemCustomViewModel_()
+//                                .id("carousel $i-$j")
+//                                .title("Page $j / $lastPage")
+//                        )
+//                    }
+//                })
+//            }
+//
+//            // Since data classes do not use code generation, there's no extension generated here
+//            ItemDataClass("this is a Data Class Item")
+//                .id("data class $i")
+//                .addTo(this)
 
-            carouselNoSnap {
-                id("carousel $i")
-                models(mutableListOf<CarouselItemCustomViewModel_>().apply {
-                    val lastPage = 10
-                    for (j in 0 until lastPage) {
-                        add(
-                            CarouselItemCustomViewModel_()
-                                .id("carousel $i-$j")
-                                .title("Page $j / $lastPage")
-                        )
-                    }
-                })
-            }
 
-            // Since data classes do not use code generation, there's no extension generated here
-            ItemDataClass("this is a Data Class Item")
-                .id("data class $i")
-                .addTo(this)
 
         }
     }
